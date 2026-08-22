@@ -1,0 +1,47 @@
+# Exclude containers data
+.containers/
+**/mssql_data/
+**/seq_data/
+
+# Exclude bin and obj directories
+**/bin/
+**/obj/
+
+# Exclude Visual Studio files
+.vs/
+*.user
+*.suo
+*.cache
+*.docstates
+*.pdb
+
+# Exclude build artifacts
+**/Debug/
+**/Release/
+
+# Exclude Docker compose override files
+docker-compose.override.yml
+docker-compose.dcproj.user
+
+# Exclude logs
+**/logs/
+*.log
+
+# Exclude temporary files
+**/tmp/
+**/temp/
+
+# Exclude node_modules if any
+**/node_modules/
+
+# Exclude git
+.git/
+.gitignore
+
+# Exclude IDE files
+.vscode/
+.idea/
+
+# Exclude OS files
+.DS_Store
+Thumbs.db

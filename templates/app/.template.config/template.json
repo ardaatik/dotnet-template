@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Dotnet Template",
+  "classifications": [ "Web", "API", "SPA", "Auth" ],
+  "identity": "DotnetTemplate.App",
+  "name": "Dotnet Template App",
+  "shortName": "dotnet-template-app",
+  "tags": { "language": "C#", "type": "project" },
+  "sourceName": "DotnetTemplate",
+  "preferNameDirectory": true,
+  "symbols": {
+    "db": {
+      "type": "parameter",
+      "datatype": "choice",
+      "enableQuotelessLiterals": true,
+      "replaces": "__DOTNET_TEMPLATE_DB__",
+      "choices": [
+        { "choice": "sqlserver", "description": "Microsoft SQL Server" },
+        { "choice": "postgres", "description": "PostgreSQL" }
+      ],
+      "defaultValue": "sqlserver"
+    },
+    "auth": {
+      "type": "parameter",
+      "datatype": "choice",
+      "enableQuotelessLiterals": true,
+      "replaces": "__DOTNET_TEMPLATE_AUTH__",
+      "choices": [
+        { "choice": "identity", "description": "Email and password (ASP.NET Identity)" },
+        { "choice": "entra", "description": "Microsoft Entra ID (hybrid MSAL + app JWT)" }
+      ],
+      "defaultValue": "identity"
+    }
+  },
+  "sources": [
+    {
+      "source": "./",
+      "target": "./",
+      "exclude": [
+        "**/.containers/**",
+        "**/bin/**",
+        "**/obj/**",
+        "**/.vs/**",
+        "**/node_modules/**",
+        ".template.config/**",
+        "README.md",
+        "server/Directory.Build.props",
+        "server/Server.Api/DependencyInjection.Variants.cs",
+        "server/Server.Api/Server.Api.csproj",
+        "client/ui/README.md",
+        "client/ui/.cursorrules",
+        "client/ui/PROGRESS.md",
+        "client/ui/TODO.md"
+      ],
+      "modifiers": [
+        {
+          "condition": "(auth == identity)",
+          "exclude": [
+            "server/Server.Api/Variants/Auth/Entra/**",
+            "client/ui/variants/**"
+          ]
+        },
+        {
+          "condition": "(auth == entra)",
+          "exclude": [
+            "server/Server.Api/Variants/Auth/Identity/**",
+            "client/ui/src/features/auth/Signup.tsx",
+            "client/ui/src/features/auth/SignupForm.tsx"
+          ]
+        }
+      ]
+    }
+  ],
+  "primaryOutputs": [ { "path": "server/Server.sln" } ],
+  "postActions": [
+    {
+      "actionId": "3A7C4B45-1F5D-4A30-959A-51B88E82B5D2",
+      "description": "Configure db and auth variants",
+      "continueOnError": false,
+      "args": {
+        "executable": "bash",
+        "args": "configure-template.sh",
+        "redirectStandardOutput": false,
+        "redirectStandardError": false
+      },
+      "manualInstructions": [
+        {
+          "text": "Run 'bash configure-template.sh' (or configure-template.cmd on Windows) from the generated project root."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dotnet Template</title>
+    <script>
+      (function () {
+        var storedTheme = localStorage.getItem('dotnet-template-ui-theme') || 'system';
+        var resolvedTheme =
+          storedTheme === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : storedTheme === 'dark'
+              ? 'dark'
+              : 'light';
+        document.documentElement.classList.add(resolvedTheme);
+      })();
+    </script>
+    <link rel="stylesheet" href="/src/index.css" />
+    <style>
+      html,
+      body,
+      #root {
+        min-height: 100svh;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--background);
+        color: var(--foreground);
+        font-family: var(--font-sans, system-ui, sans-serif);
+      }
+    </style>
+    <script defer src="/theme.js"></script>
+    <script defer>
+      (function () {
+        var THEME_KEY = 'dotnet-template-ui-theme';
+        var PALETTE_KEY = 'dotnet-template-ui-palette';
+        var DEFAULT_PALETTE = 'Default';
+        var LEGACY_PALETTE = 'Vercel';
+
+        function normalizePaletteName(name) {
+          return name === LEGACY_PALETTE ? DEFAULT_PALETTE : name;
+        }
+
+        function resolveThemeMode(theme) {
+          if (theme === 'system') {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+
+          return theme === 'dark' ? 'dark' : 'light';
+        }
+
+        function resolveStoredPalette(stored, mode, palettes) {
+          var normalized = normalizePaletteName(stored || DEFAULT_PALETTE);
+          var modePalettes = palettes[mode] || [];
+
+          for (var i = 0; i < modePalettes.length; i++) {
+            if (modePalettes[i].theme === normalized) {
+              return normalized;
+            }
+          }
+
+          return DEFAULT_PALETTE;
+        }
+
+        function findPaletteVariables(name, mode, palettes) {
+          var normalized = normalizePaletteName(name);
+          var modePalettes = palettes[mode] || [];
+
+          for (var i = 0; i < modePalettes.length; i++) {
+            if (modePalettes[i].theme === normalized) {
+              return modePalettes[i].variables;
+            }
+          }
+
+          return modePalettes[0] ? modePalettes[0].variables : null;
+        }
+
+        function applyPaletteVariables(variables) {
+          var declarations = Object.keys(variables)
+            .map(function (key) {
+              return '  ' + key + ': ' + variables[key] + ';';
+            })
+            .join('\n');
+
+          var styleEl = document.getElementById('theme-palette-vars');
+
+          if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'theme-palette-vars';
+            document.head.appendChild(styleEl);
+          }
+
+          styleEl.textContent = ':root,\n.dark {\n' + declarations + '\n}';
+        }
+
+        function bootstrapTheme() {
+          var palettes = window.__THEME_PALETTES;
+
+          if (!palettes) {
+            return;
+          }
+
+          var storedTheme = localStorage.getItem(THEME_KEY) || 'system';
+          var resolvedTheme = resolveThemeMode(storedTheme);
+          var root = document.documentElement;
+
+          root.classList.remove('light', 'dark');
+          root.classList.add(resolvedTheme);
+
+          var paletteName = resolveStoredPalette(
+            localStorage.getItem(PALETTE_KEY),
+            resolvedTheme,
+            palettes
+          );
+          var variables = findPaletteVariables(paletteName, resolvedTheme, palettes);
+
+          if (variables) {
+            applyPaletteVariables(variables);
+          }
+        }
+
+        if (window.__THEME_PALETTES) {
+          bootstrapTheme();
+          return;
+        }
+
+        var themeScript = document.querySelector('script[src="/theme.js"]');
+
+        if (!themeScript) {
+          return;
+        }
+
+        themeScript.addEventListener('load', bootstrapTheme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

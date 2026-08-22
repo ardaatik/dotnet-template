@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- Local dev defaults; template generation selects one db/auth pair -->
+    <DbProvider Condition="'$(DbProvider)' == ''">$(Env:DOTNET_DB_PROVIDER)</DbProvider>
+    <DbProvider Condition="'$(DbProvider)' == ''">SqlServer</DbProvider>
+    <AuthProvider Condition="'$(AuthProvider)' == ''">$(Env:DOTNET_AUTH_PROVIDER)</AuthProvider>
+    <AuthProvider Condition="'$(AuthProvider)' == ''">Identity</AuthProvider>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,14 @@
+---
+description: Answer questions in the fewest words possible — one or two sentences max
+alwaysApply: true
+---
+
+# Concise answers
+
+When the user asks a question, answer in **3-4 sentences max**. No preamble, no recap, no tables, no bullet lists unless they explicitly ask.
+
+- Lead with the fix or conclusion.
+- Skip background, tutorials, and "mental models" unless asked.
+- One short example only if required.
+
+If they need more detail, they will ask.

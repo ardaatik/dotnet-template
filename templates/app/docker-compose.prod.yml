@@ -1,0 +1,93 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik-prod
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL:-admin@example.com}
+      - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-data:/data
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  client:
+    image: ${CLIENT_IMAGE:-ghcr.io/your-org/your-app-client:latest}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client.rule=Host(`${APP_HOST:-your-app.example.com}`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.client.entrypoints=websecure"
+      - "traefik.http.routers.client.tls.certresolver=letsencrypt"
+      - "traefik.http.services.client.loadbalancer.server.port=80"
+    depends_on:
+      - server-api
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  server-api:
+    image: ${API_IMAGE:-ghcr.io/your-org/your-app-api:latest}
+    environment:
+      - ConnectionStrings__Database=${DATABASE_CONNECTION_STRING}
+      - Cors__AllowedOrigins__0=https://${APP_HOST:-your-app.example.com}
+      - Jwt__Issuer=${JWT_ISSUER:-dotnet-template.api}
+      - Jwt__Audience=${JWT_AUDIENCE:-dotnet-template.app}
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__ExpirationInMinutes=${JWT_EXPIRATION_MINUTES:-60}
+      - Jwt__RefreshTokenExpirationDays=${JWT_REFRESH_EXPIRATION_DAYS:-7}
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`${APP_HOST:-your-app.example.com}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.server-api.loadbalancer.server.port=8080"
+    deploy:
+      update_config:
+        order: start-first
+      mode: replicated
+      replicas: 3
+    depends_on:
+      - server-sqlserver
+
+  server-sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    entrypoint: /bin/bash
+    command: -c "export MSSQL_SA_PASSWORD=$$(cat /run/secrets/db_password) && /opt/mssql/bin/launch_sqlserver.sh"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$(cat /run/secrets/db_password)\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - mssql-data-prod:/var/opt/mssql
+      - backups-prod:/backups
+    secrets:
+      - db_password
+
+secrets:
+  db_password:
+    external: true
+
+volumes:
+  mssql-data-prod:
+  backups-prod:
+  traefik-data:

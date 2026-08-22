@@ -1,0 +1,44 @@
+services:
+  server.api:
+    image: ${DOCKER_REGISTRY-}api
+    build:
+      context: .
+      dockerfile: Server.Api/Dockerfile
+    depends_on:
+      server.sqlserver:
+        condition: service_healthy
+    ports:
+      - 5000:8080
+      - 5001:8081
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Database=Server=server.sqlserver;Database=server;User Id=sa;Password=Password1!;TrustServerCertificate=True
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://server.aspire-dashboard:18889
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+
+  server.sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Password1!"
+      MSSQL_PID: Developer
+    volumes:
+      - mssql-data-dev:/var/opt/mssql
+    ports:
+      - 1433:1433
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Password1!" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  server.aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
+    ports:
+      - 18888:18888
+
+volumes:
+  mssql-data-dev:
